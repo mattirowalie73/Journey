@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#f5b400">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f2a900"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Nailong Trader"><link rel="manifest" href="manifest.json">
+<title>Trading Journal</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#fff8df;color:#3d2b16;font-family:Inter,Arial,sans-serif}
+.container{max-width:1050px;margin:auto;padding:24px 16px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.brand{font-size:22px;font-weight:800}
+.badge{font-size:11px;font-weight:800;background:#fff0a8;color:#8a4f00;padding:8px 12px;border-radius:20px}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.card,.panel{background:#fffdf5;border:1px solid #f0d98a;border-radius:17px;padding:17px;box-shadow:0 6px 24px #8a5a0018}
+.stat span{font-size:11px;color:#8b7355}.stat b{display:block;font-size:21px;margin-top:7px}
+.panel{margin-bottom:18px}.account-panel{margin-bottom:18px}.title{font-weight:800;margin-bottom:15px}
+.form{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+label{display:block;font-size:11px;font-weight:800;color:#806a4d;margin-bottom:6px}
+input,select,textarea{width:100%;border:1px solid #ead8a2;border-radius:10px;padding:11px;background:#fffef8;font:inherit;outline:0}
+input:focus,select:focus,textarea:focus{border-color:#f0a500;box-shadow:0 0 0 3px #fff0b8}
+textarea{resize:vertical;min-height:43px}.wide{grid-column:span 2}
+.actions{display:flex;gap:9px;margin-top:13px}.btn{border:0;border-radius:10px;padding:11px 17px;font-weight:800;cursor:pointer}.add{background:#f2a900;color:#3d2b16}.clear{background:#fff0b8;color:#674719}
+.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:760px}th,td{text-align:left;padding:12px 9px;border-bottom:1px solid #f1e6c4;font-size:12px}th{font-size:10px;color:#8a7658;text-transform:uppercase}
+.buy{color:#d88600;font-weight:800}.sell{color:#b85c2d;font-weight:800}.positive{color:#c97900;font-weight:800}.negative{color:#c04d32;font-weight:800}
+.del{border:0;background:#fff0e8;color:#a34728;border-radius:7px;padding:5px 8px;cursor:pointer}
+.empty{text-align:center;color:#9b8768;padding:28px}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}.form{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:500px){.grid,.form{grid-template-columns:1fr}.wide{grid-column:auto}.top{align-items:flex-start}.brand{font-size:19px}}
+</style>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+#lockScreen{position:fixed;inset:0;z-index:99999;background:linear-gradient(145deg,#fff3a8,#f2a900);display:flex;align-items:center;justify-content:center;padding:20px}
+.lock-box{width:min(420px,100%);background:#fffdf5;border:2px solid #efc34b;border-radius:24px;padding:28px;box-shadow:0 18px 55px #6b430033;text-align:center}
+.lock-logo{font-size:52px;margin-bottom:4px}
+.lock-title{font-size:25px;font-weight:900;color:#6b3d00}
+.lock-sub{font-size:12px;color:#8b6a3c;margin:7px 0 20px}
+.lock-input{width:100%;border:1px solid #e4c979;border-radius:12px;padding:13px;background:#fff;font-size:16px;text-align:center;letter-spacing:5px;outline:0}
+.lock-input:focus{border-color:#f2a900;box-shadow:0 0 0 3px #fff0b8}
+.lock-btn{width:100%;border:0;border-radius:12px;padding:13px;margin-top:10px;background:#f2a900;color:#3d2b16;font-weight:900;cursor:pointer}
+.lock-secondary{background:#fff0b8}
+.lock-msg{font-size:11px;color:#b04b2f;min-height:16px;margin-top:9px}
+.lock-link{display:inline-block;margin-top:13px;color:#8a4f00;font-size:11px;font-weight:800;cursor:pointer}
+.recovery-code{background:#fff6cf;border:1px dashed #d9a62e;border-radius:10px;padding:10px;margin-top:12px;font-weight:900;letter-spacing:2px}
+</style>
+</head>
+<script>
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
+}
+</script>
+<body>
+
+<div id="installAppBar" style="display:none;position:sticky;top:0;z-index:9999;padding:10px 14px;background:#fff3c4;border-bottom:1px solid #e5b300;text-align:center;font-family:Arial,sans-serif">
+  <button id="installAppBtn" style="border:0;border-radius:12px;padding:10px 16px;background:#f5b400;color:#3b2600;font-weight:700;cursor:pointer">📲 Download / Pasang App</button>
+  <button id="dismissInstallBtn" style="border:0;background:transparent;margin-left:6px;color:#765c00;cursor:pointer">✕</button>
+</div>
+
+<div id="lockScreen">
+  <div class="lock-box">
+    <div class="lock-logo">🐉</div>
+    <div class="lock-title">Nailong Trader</div>
+    <div class="lock-sub" id="lockSubtitle">Masukkan kunci untuk membuka beranda.</div>
+
+    <div id="pinLogin">
+      <input id="pinInput" class="lock-input" type="password" inputmode="numeric" maxlength="6" placeholder="Kunci 4-6 digit">
+      <button class="lock-btn" onclick="unlockApp()">🔓 Buka Nailong Trader</button>
+      <div id="lockMsg" class="lock-msg"></div>
+      <span class="lock-link" onclick="showRecovery()">Lupa kunci?</span>
+    </div>
+
+    <div id="pinSetup" style="display:none">
+      <input id="newPinInput" class="lock-input" type="password" inputmode="numeric" maxlength="6" placeholder="Buat kunci 4-6 digit">
+      <input id="confirmPinInput" class="lock-input" type="password" inputmode="numeric" maxlength="6" placeholder="Ulangi kunci" style="margin-top:8px">
+      <button class="lock-btn" onclick="createPin()">🔐 Simpan Kunci</button>
+      <div id="setupMsg" class="lock-msg"></div>
+    </div>
+
+    <div id="recoveryPanel" style="display:none">
+      <div class="lock-sub">Masukkan kode pemulihan yang dibuat saat pertama kali mengatur kunci.</div>
+      <input id="recoveryInput" class="lock-input" type="text" maxlength="12" placeholder="KODE PEMULIHAN" style="letter-spacing:2px">
+      <button class="lock-btn" onclick="verifyRecovery()">♻️ Atur Kunci Baru</button>
+      <button class="lock-btn lock-secondary" onclick="showLogin()">Kembali</button>
+      <div id="recoveryMsg" class="lock-msg"></div>
+    </div>
+
+    <div id="recoveryResult" style="display:none">
+      <div class="lock-sub">Kunci berhasil dibuat. Simpan kode pemulihan ini di tempat aman.</div>
+      <div id="recoveryCodeDisplay" class="recovery-code"></div>
+      <button class="lock-btn" onclick="finishRecovery()">Masuk ke Nailong Trader</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+<div class="top"><div><div class="brand">🐉 Nailong Trader</div><div style="font-size:11px;color:#9a6a22;font-weight:700;margin-top:3px">TRADING JOURNAL • PERSONAL</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn add" onclick="downloadPDFRecap()">📄 Download Recap PDF</button><div class="badge">NAILONG MODE</div></div></div>
+
+<div class="panel" style="background:linear-gradient(135deg,#fff3a8,#ffd45c);border-color:#f0bd35;display:flex;align-items:center;justify-content:space-between;gap:14px">
+<div><div style="font-size:17px;font-weight:900;color:#6b3d00">🐉 Nailong Trader</div><div style="font-size:11px;color:#80551c;margin-top:4px">Kelola modal, trading, profit, dan penarikan dalam satu dashboard.</div></div>
+<div style="font-size:34px;line-height:1">🐲</div>
+</div>
+<div class="panel account-panel">
+<div class="title">Pengaturan Akun</div>
+<div class="form">
+<div><label>MODAL AWAL (IDR)</label><input id="initialInput" type="number" step="0.01" value="1000" oninput="updateAccount()"></div>
+<div><label>BALANCE SAAT INI (IDR)</label><input id="balanceInput" type="number" step="0.01" placeholder="Otomatis"></div>
+<div><label>PENARIKAN (IDR)</label><input id="withdrawInput" type="number" step="0.01" placeholder="Contoh: 500000"></div>
+<div><label>TANGGAL PENARIKAN</label><input id="withdrawDate" type="date"></div>
+<div class="wide"><label>CATATAN PENARIKAN</label><input id="withdrawNote" placeholder="Contoh: Tarik profit mingguan"></div>
+</div>
+<div class="actions">
+<button class="btn add" onclick="setBalanceManual()">Simpan Balance</button>
+<button class="btn clear" onclick="openChangePin()">🔑 Ubah Kunci</button>
+<button class="btn add" onclick="addWithdrawal()">+ Simpan Penarikan</button>
+<button class="btn clear" onclick="autoBalance()">Gunakan Balance Otomatis</button>
+</div>
+</div>
+
+<div class="grid">
+<div class="card stat"><span>MODAL AWAL</span><b id="initial">$1,000.00</b></div>
+<div class="card stat"><span>BALANCE</span><b id="balance">$1,000.00</b></div>
+<div class="card stat"><span>TOTAL P/L</span><b id="total">$0.00</b></div>
+<div class="card stat"><span>WIN RATE</span><b id="winrate">0%</b></div>
+<div class="card stat"><span>TOTAL PENARIKAN</span><b id="withdrawTotal">Rp 0</b></div>
+</div>
+
+<div class="panel">
+<div class="title">Tambah Trading</div>
+<div class="form">
+<div><label>TANGGAL</label><input id="date" type="date"></div>
+<div><label>INSTRUMENT</label><input id="pair" placeholder="XAU/USD"></div>
+<div><label>POSISI</label><select id="side"><option>BUY</option><option>SELL</option></select></div>
+<div><label>LOT</label><input id="lot" type="number" step="0.01" placeholder="0.10"></div>
+<div><label>ENTRY</label><input id="entry" type="number" step="0.00001" placeholder="3300"></div>
+<div><label>STOP LOSS</label><input id="sl" type="number" step="0.00001" placeholder="3290"></div>
+<div><label>TAKE PROFIT</label><input id="tp" type="number" step="0.00001" placeholder="3320"></div>
+<div><label>EXIT</label><input id="exit" type="number" step="0.00001" placeholder="3315"></div>
+<div class="wide"><label>PROFIT / LOSS (IDR)</label><input id="pl" type="number" step="0.01" placeholder="150000"></div>
+<div class="wide"><label>CATATAN / ALASAN ENTRY</label><textarea id="note" placeholder="Contoh: breakout resistance + konfirmasi candle"></textarea></div>
+</div>
+<div class="actions"><button class="btn add" onclick="addTrade()">+ Simpan Trading</button><button class="btn clear" onclick="clearForm()">Reset</button></div>
+</div>
+
+<div class="panel">
+<div class="title">Riwayat Penarikan</div>
+<div class="tablewrap">
+<table><thead><tr><th>Tanggal</th><th>Jumlah</th><th>Catatan</th><th></th></tr></thead>
+<tbody id="withdrawals"></tbody></table>
+</div>
+</div>
+
+<div class="panel">
+<div class="title">Profit Bulanan</div>
+<div class="tablewrap">
+<table><thead><tr><th>Bulan</th><th>Jumlah Trade</th><th>Profit</th><th>Loss</th><th>Net P/L</th></tr></thead>
+<tbody id="monthly"></tbody></table>
+</div>
+</div>
+
+<div class="panel">
+<div class="title">Riwayat Trading</div>
+<div class="tablewrap">
+<table><thead><tr><th>Tanggal</th><th>Instrument</th><th>Posisi</th><th>Entry</th><th>Exit</th><th>Lot</th><th>P/L</th><th></th></tr></thead>
+<tbody id="history"></tbody></table>
+</div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+let trades=JSON.parse(localStorage.getItem('tradingJournal')||'[]');
+let withdrawals=JSON.parse(localStorage.getItem('tradingWithdrawals')||'[]');
+let account=JSON.parse(localStorage.getItem('tradingAccount')||'{"initial":10000000,"manualBalance":null}');
+const $=id=>document.getElementById(id);
+$('date').value=new Date().toISOString().slice(0,10);
+$('withdrawDate').value=new Date().toISOString().slice(0,10);
+$('initialInput').value=account.initial;
+$('balanceInput').value=account.manualBalance===null?'':account.manualBalance;
+
+function money(n){return (n>=0?'+':'-')+'Rp '+Math.abs(n).toLocaleString('id-ID',{minimumFractionDigits:0,maximumFractionDigits:0})}
+function save(){localStorage.setItem('tradingJournal',JSON.stringify(trades));render()}
+function addTrade(){
+ const pair=$('pair').value.trim()||'—', pl=Number($('pl').value);
+ if(!Number.isFinite(pl)){alert('Masukkan nilai Profit / Loss.');return}
+ trades.unshift({date:$('date').value||'',pair,side:$('side').value,lot:Number($('lot').value)||0,entry:Number($('entry').value)||0,exit:Number($('exit').value)||0,pl,note:$('note').value});
+ save();clearForm(false);
+}
+function removeTrade(i){trades.splice(i,1);save()}
+function clearForm(resetDate=true){
+ ['pair','lot','entry','sl','tp','exit','pl','note'].forEach(id=>$(id).value='');
+ if(resetDate)$('date').value=new Date().toISOString().slice(0,10);
+}
+function render(){
+ const total=trades.reduce((s,t)=>s+t.pl,0), wins=trades.filter(t=>t.pl>0).length;
+ $('initial').textContent='Rp '+account.initial.toLocaleString('id-ID',{minimumFractionDigits:0,maximumFractionDigits:0});
+ $('total').textContent=money(total);$('total').className=total>=0?'positive':'negative';
+ const totalWithdrawals=withdrawals.reduce((s,w)=>s+w.amount,0);
+ const calculatedBalance=account.initial+total-totalWithdrawals;
+ const currentBalance=account.manualBalance===null
+   ? calculatedBalance
+   : account.manualBalance-totalWithdrawals;
+ $('balance').textContent='Rp '+currentBalance.toLocaleString('id-ID',{minimumFractionDigits:0,maximumFractionDigits:0});
+ $('winrate').textContent=(trades.length?(wins/trades.length*100):0).toFixed(0)+'%';
+ $('withdrawTotal').textContent='Rp '+totalWithdrawals.toLocaleString('id-ID',{maximumFractionDigits:0});
+ $('withdrawals').innerHTML=withdrawals.length?withdrawals.map((w,i)=>`<tr><td>${w.date}</td><td class="negative">-${money(w.amount).slice(1)}</td><td>${w.note}</td><td><button class="del" onclick="removeWithdrawal(${i})">×</button></td></tr>`).join(''):'<tr><td colspan="4" class="empty">Belum ada penarikan.</td></tr>';
+ const months={};
+ trades.forEach(t=>{
+   const key=(t.date||'Tanpa tanggal').slice(0,7);
+   if(!months[key]) months[key]={count:0,profit:0,loss:0};
+   months[key].count++;
+   if(t.pl>=0) months[key].profit+=t.pl; else months[key].loss+=Math.abs(t.pl);
+ });
+ $('monthly').innerHTML=Object.keys(months).sort().reverse().map(key=>{
+   const m=months[key], net=m.profit-m.loss;
+   let label=key;
+   if(/^\\d{4}-\\d{2}$/.test(key)){
+     const [y,mo]=key.split('-');
+     label=new Date(Number(y),Number(mo)-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+   }
+   return `<tr><td><b>${label}</b></td><td>${m.count}</td><td class="positive">+${money(m.profit).slice(1)}</td><td class="negative">-${money(m.loss).slice(1)}</td><td class="${net>=0?'positive':'negative'}">${money(net)}</td></tr>`;
+ }).join('') || '<tr><td colspan="5" class="empty">Belum ada data bulanan.</td></tr>';
+
+ $('history').innerHTML=trades.length?trades.map((t,i)=>`<tr>
+ <td>${t.date}</td><td><b>${t.pair}</b></td><td class="${t.side==='BUY'?'buy':'sell'}">${t.side}</td>
+ <td>${t.entry||'—'}</td><td>${t.exit||'—'}</td><td>${t.lot||'—'}</td>
+ <td class="${t.pl>=0?'positive':'negative'}">${money(t.pl)}</td><td><button class="del" onclick="removeTrade(${i})">×</button></td></tr>`).join('')
+ :'<tr><td colspan="8" class="empty">Belum ada transaksi. Tambahkan trading pertama Anda.</td></tr>';
+}
+function addWithdrawal(){
+  const amount=Number($('withdrawInput').value);
+  if(!Number.isFinite(amount)||amount<=0){alert('Masukkan jumlah penarikan yang valid.');return}
+  const total=trades.reduce((s,t)=>s+t.pl,0);
+  const totalWithdrawals=withdrawals.reduce((s,w)=>s+w.amount,0);
+  const available=account.manualBalance===null
+    ? account.initial+total-totalWithdrawals
+    : account.manualBalance-totalWithdrawals;
+  if(amount>available){alert('Jumlah penarikan melebihi balance yang tersedia.');return}
+  withdrawals.unshift({
+    date:$('withdrawDate').value||new Date().toISOString().slice(0,10),
+    amount,
+    note:$('withdrawNote').value||'Penarikan dana'
+  });
+  localStorage.setItem('tradingWithdrawals',JSON.stringify(withdrawals));
+  clearWithdrawal(); render();
+}
+function removeWithdrawal(i){
+  withdrawals.splice(i,1);
+  localStorage.setItem('tradingWithdrawals',JSON.stringify(withdrawals));
+  render();
+}
+function clearWithdrawal(){
+  $('withdrawInput').value='';
+  $('withdrawNote').value='';
+  $('withdrawDate').value=new Date().toISOString().slice(0,10);
+}
+function updateAccount(){
+  const value=Number($('initialInput').value);
+  if(!Number.isFinite(value)||value<0)return;
+  account.initial=value;
+  localStorage.setItem('tradingAccount',JSON.stringify(account));
+  render();
+}
+function setBalanceManual(){
+  const value=Number($('balanceInput').value);
+  if(!Number.isFinite(value)||value<0){alert('Masukkan balance yang valid.');return;}
+  account.manualBalance=value;
+  localStorage.setItem('tradingAccount',JSON.stringify(account));
+  render();
+}
+function autoBalance(){
+  account.manualBalance=null;
+  $('balanceInput').value='';
+  localStorage.setItem('tradingAccount',JSON.stringify(account));
+  render();
+}
+function downloadPDFRecap(){
+  if(!window.jspdf || !window.jspdf.jsPDF){
+    alert('Library PDF belum termuat. Periksa koneksi internet lalu coba lagi.');
+    return;
+  }
+
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const total=trades.reduce((s,t)=>s+t.pl,0);
+  const totalWithdrawals=withdrawals.reduce((s,w)=>s+w.amount,0);
+  const calculatedBalance=account.initial+total-totalWithdrawals;
+  const currentBalance=account.manualBalance===null?calculatedBalance:account.manualBalance-totalWithdrawals;
+  const wins=trades.filter(t=>t.pl>0).length;
+  const winRate=trades.length?(wins/trades.length*100):0;
+
+  const fmt=n=>'Rp '+Number(n||0).toLocaleString('id-ID');
+  const dateNow=new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+
+  doc.setFillColor(255,212,92);
+  doc.roundedRect(12,10,186,24,5,5,'F');
+  doc.setTextColor(107,61,0);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(20);
+  doc.text('Nailong Trader',20,21);
+  doc.setFontSize(9);
+  doc.setFont('helvetica','normal');
+  doc.text('TRADING RECAP • '+dateNow,20,28);
+
+  let y=44;
+  doc.setTextColor(61,43,22);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(13);
+  doc.text('Ringkasan Akun',14,y);
+  y+=8;
+
+  const stats=[
+    ['Modal Awal',fmt(account.initial)],
+    ['Balance',fmt(currentBalance)],
+    ['Total P/L',fmt(total)],
+    ['Win Rate',winRate.toFixed(0)+'%'],
+    ['Total Penarikan',fmt(totalWithdrawals)]
+  ];
+
+  doc.setFontSize(9);
+  stats.forEach((s,i)=>{
+    const x=14+(i%2)*92;
+    const yy=y+Math.floor(i/2)*17;
+    doc.setFillColor(255,249,224);
+    doc.roundedRect(x,yy-5,86,13,3,3,'F');
+    doc.setFont('helvetica','bold');
+    doc.text(s[0],x+4,yy);
+    doc.setFont('helvetica','normal');
+    doc.text(s[1],x+4,yy+5);
+  });
+  y+=51;
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(13);
+  doc.text('Riwayat Trading',14,y);
+  y+=7;
+
+  const cols=[14,39,73,98,123,148,174];
+  const headers=['Tanggal','Instrument','Posisi','Entry','Exit','Lot','P/L'];
+  doc.setFillColor(242,169,0);
+  doc.rect(12,y-5,186,8,'F');
+  doc.setTextColor(61,43,22);
+  doc.setFontSize(7);
+  headers.forEach((h,i)=>doc.text(h,cols[i],y));
+  y+=7;
+
+  doc.setFont('helvetica','normal');
+  if(!trades.length){
+    doc.text('Belum ada transaksi.',14,y);
+    y+=8;
+  }else{
+    trades.slice(0,28).forEach(t=>{
+      if(y>275){doc.addPage();y=18;}
+      doc.text(String(t.date||'-'),cols[0],y);
+      doc.text(String(t.pair||'-').slice(0,18),cols[1],y);
+      doc.text(String(t.side||'-'),cols[2],y);
+      doc.text(String(t.entry||'-'),cols[3],y);
+      doc.text(String(t.exit||'-'),cols[4],y);
+      doc.text(String(t.lot||'-'),cols[5],y);
+      doc.text(fmt(t.pl),cols[6],y);
+      doc.setDrawColor(235,225,190);
+      doc.line(12,y+2,198,y+2);
+      y+=6;
+    });
+    if(trades.length>28){
+      doc.setFontSize(8);
+      doc.text('Menampilkan 28 transaksi terbaru. Gunakan data di browser untuk melihat seluruh riwayat.',14,y+3);
+      y+=10;
+    }
+  }
+
+  if(y>245){doc.addPage();y=18;}
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(13);
+  doc.text('Riwayat Penarikan',14,y);
+  y+=7;
+
+  doc.setFillColor(242,169,0);
+  doc.rect(12,y-5,186,8,'F');
+  doc.setFontSize(7);
+  doc.text('Tanggal',14,y);
+  doc.text('Jumlah',55,y);
+  doc.text('Catatan',105,y);
+  y+=7;
+  doc.setFont('helvetica','normal');
+
+  if(!withdrawals.length){
+    doc.text('Belum ada penarikan.',14,y);
+  }else{
+    withdrawals.slice(0,20).forEach(w=>{
+      if(y>275){doc.addPage();y=18;}
+      doc.text(String(w.date||'-'),14,y);
+      doc.text('-'+fmt(w.amount),55,y);
+      doc.text(String(w.note||'-').slice(0,48),105,y);
+      doc.setDrawColor(235,225,190);
+      doc.line(12,y+2,198,y+2);
+      y+=6;
+    });
+  }
+
+  const pages=doc.internal.getNumberOfPages();
+  for(let p=1;p<=pages;p++){
+    doc.setPage(p);
+    doc.setFontSize(7);
+    doc.setTextColor(130,105,70);
+    doc.text('Nailong Trader • Personal Trading Journal',14,289);
+    doc.text('Halaman '+p+' / '+pages,170,289);
+  }
+
+  doc.save('Nailong-Trader-Recap-'+new Date().toISOString().slice(0,10)+'.pdf');
+}
+
+render();
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));}
+/* Nailong Trader app lock */
+const LOCK_KEY='nailongTraderPin';
+const RECOVERY_KEY='nailongTraderRecovery';
+const SESSION_KEY='nailongTraderUnlocked';
+
+function makeRecoveryCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code='';
+  for(let i=0;i<10;i++) code+=chars[Math.floor(Math.random()*chars.length)];
+  return code;
+}
+
+function setupLock(){
+  const hasPin=!!localStorage.getItem(LOCK_KEY);
+  if(sessionStorage.getItem(SESSION_KEY)==='1'){
+    $('lockScreen').style.display='none';
+    return;
+  }
+  if(hasPin){
+    $('pinLogin').style.display='block';
+    $('pinSetup').style.display='none';
+  }else{
+    $('pinLogin').style.display='none';
+    $('pinSetup').style.display='block';
+    $('lockSubtitle').textContent='Buat kunci sebelum menggunakan Nailong Trader.';
+  }
+}
+
+function validPin(v){return /^\d{4,6}$/.test(v)}
+
+function createPin(){
+  const a=$('newPinInput').value.trim(), b=$('confirmPinInput').value.trim();
+  if(!validPin(a)){ $('setupMsg').textContent='Kunci harus terdiri dari 4-6 angka.'; return; }
+  if(a!==b){ $('setupMsg').textContent='Konfirmasi kunci tidak sama.'; return; }
+  const recovery=makeRecoveryCode();
+  localStorage.setItem(LOCK_KEY,a);
+  localStorage.setItem(RECOVERY_KEY,recovery);
+  $('pinSetup').style.display='none';
+  $('recoveryResult').style.display='block';
+  $('recoveryCodeDisplay').textContent=recovery;
+}
+
+function finishRecovery(){
+  sessionStorage.setItem(SESSION_KEY,'1');
+  $('lockScreen').style.display='none';
+}
+
+function unlockApp(){
+  const pin=$('pinInput').value.trim();
+  if(pin===localStorage.getItem(LOCK_KEY)){
+    sessionStorage.setItem(SESSION_KEY,'1');
+    $('lockScreen').style.display='none';
+    $('lockMsg').textContent='';
+  }else{
+    $('lockMsg').textContent='Kunci salah. Silakan coba lagi atau gunakan "Lupa kunci?".';
+    $('pinInput').value='';
+  }
+}
+
+function showRecovery(){
+  $('pinLogin').style.display='none';
+  $('recoveryPanel').style.display='block';
+  $('lockSubtitle').textContent='Pemulihan akses';
+}
+function showLogin(){
+  $('recoveryPanel').style.display='none';
+  $('pinLogin').style.display='block';
+  $('lockSubtitle').textContent='Masukkan kunci untuk membuka beranda.';
+}
+function verifyRecovery(){
+  const input=$('recoveryInput').value.trim().toUpperCase();
+  if(input===localStorage.getItem(RECOVERY_KEY)){
+    const newPin=prompt('Buat kunci baru 4-6 angka:');
+    if(!validPin(newPin)){ $('recoveryMsg').textContent='Kunci baru harus 4-6 angka.'; return; }
+    const confirm=prompt('Ulangi kunci baru:');
+    if(newPin!==confirm){ $('recoveryMsg').textContent='Konfirmasi kunci tidak sama.'; return; }
+    localStorage.setItem(LOCK_KEY,newPin);
+    $('recoveryMsg').style.color='#167847';
+    $('recoveryMsg').textContent='Kunci berhasil diubah. Silakan masuk dengan kunci baru.';
+    setTimeout(showLogin,700);
+  }else{
+    $('recoveryMsg').textContent='Kode pemulihan tidak cocok.';
+  }
+}
+
+function openChangePin(){
+  $('changePinModal').style.display='flex';
+  $('changePinMsg').textContent='';
+}
+function closeChangePin(){
+  $('changePinModal').style.display='none';
+  ['oldPin','changePin','changePinConfirm'].forEach(id=>$(id).value='');
+}
+function changePin(){
+  const old=$('oldPin').value.trim(), a=$('changePin').value.trim(), b=$('changePinConfirm').value.trim();
+  if(old!==localStorage.getItem(LOCK_KEY)){ $('changePinMsg').textContent='Kunci lama salah.'; return; }
+  if(!validPin(a)){ $('changePinMsg').textContent='Kunci baru harus 4-6 angka.'; return; }
+  if(a!==b){ $('changePinMsg').textContent='Konfirmasi kunci tidak sama.'; return; }
+  localStorage.setItem(LOCK_KEY,a);
+  const recovery=makeRecoveryCode();
+  localStorage.setItem(RECOVERY_KEY,recovery);
+  alert('Kunci berhasil diubah.\n\nKode pemulihan baru: '+recovery+'\n\nSimpan kode ini di tempat aman.');
+  closeChangePin();
+}
+
+setupLock();
+
+</script>
+<div id="changePinModal" style="display:none;position:fixed;inset:0;z-index:99998;background:#3d2b1688;align-items:center;justify-content:center;padding:20px">
+  <div class="lock-box">
+    <div class="lock-logo" style="font-size:38px">🔑</div>
+    <div class="lock-title" style="font-size:20px">Ubah Kunci</div>
+    <div class="lock-sub">Masukkan kunci lama dan kunci baru.</div>
+    <input id="oldPin" class="lock-input" type="password" inputmode="numeric" maxlength="6" placeholder="Kunci lama">
+    <input id="changePin" class="lock-input" type="password" inputmode="numeric" maxlength="6" placeholder="Kunci baru" style="margin-top:8px">
+    <input id="changePinConfirm" class="lock-input" type="password" inputmode="numeric" maxlength="6" placeholder="Ulangi kunci baru" style="margin-top:8px">
+    <button class="lock-btn" onclick="changePin()">Simpan Kunci Baru</button>
+    <button class="lock-btn lock-secondary" onclick="closeChangePin()">Batal</button>
+    <div id="changePinMsg" class="lock-msg"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  let deferredPrompt = null;
+  const bar = document.getElementById('installAppBar');
+  const installBtn = document.getElementById('installAppBtn');
+  const dismissBtn = document.getElementById('dismissInstallBtn');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (bar) bar.style.display = 'block';
+  });
+
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        if (bar) bar.style.display = 'none';
+      } else {
+        alert('Untuk memasang Nailong Trader sebagai aplikasi, buka website ini melalui Chrome HTTPS, lalu pilih menu ⋮ → Tambahkan ke layar utama / Install app.');
+      }
+    });
+  }
+
+  if (dismissBtn) {
+    dismissBtn.addEventListener('click', () => {
+      if (bar) bar.style.display = 'none';
+    });
+  }
+
+  // Android Chrome may not fire beforeinstallprompt for a local file.
+  // Provide an always-available browser instruction button.
+  window.addEventListener('appinstalled', () => {
+    if (bar) bar.style.display = 'none';
+  });
+})();
+</script>
+
+</body>
+</html>
