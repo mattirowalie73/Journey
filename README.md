@@ -1,0 +1,2 @@
+# Journey
+trading dengan mudah
